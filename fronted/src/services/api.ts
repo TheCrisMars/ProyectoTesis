@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // --- Configuration ---
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const API_URL = "http://localhost:5000";
 
 const api = axios.create({
     baseURL: API_URL,
@@ -21,27 +21,21 @@ api.interceptors.request.use((config) => {
 
 // --- Auth Services ---
 export const authService = {
-    async login(email: string, password: string) {
+    async login(username: string, password: string) {
         // OAuth2PasswordRequestForm expects form-data, not JSON
-        const formData = new FormData();
-        formData.append('username', email); // FASTAPI expects 'username' field
-        formData.append('password', password);
+        const response = await api.post('/login', { username: username, password: password });
 
-        const response = await api.post('/token', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
-
-        if (response.data.access_token) {
-            localStorage.setItem('token', response.data.access_token);
+        if (response.data.token) {
+            localStorage.setItem('token', response.data.token);
         }
         return response.data;
     },
 
     async register(data: any) {
         return api.post('/users/', {
-            email: data.email,
+            username: data.username,
             password: data.password,
-            full_name: data.fullName
+            // full_name: data.fullName // Backend likely doesn't support this yet in users table
         });
     },
 

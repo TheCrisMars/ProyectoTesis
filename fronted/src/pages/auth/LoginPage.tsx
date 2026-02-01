@@ -12,10 +12,11 @@ import { Link, useNavigate } from "react-router-dom"
 import { authService } from "@/services/api"
 import { toast } from "react-hot-toast"
 import { useAuth } from "@/context/AuthContext"
+import { jwtDecode } from "jwt-decode";
 
 const formSchema = z.object({
-    email: z.string().email({ message: "Email inválido" }),
-    password: z.string().min(6, { message: "La contraseña debe tener al menos 6 caracteres" }),
+    username: z.string().min(3, { message: "El usuario debe tener al menos 3 caracteres" }),
+    password: z.string().min(1, { message: "La contraseña es requerida" }),
 })
 
 export function LoginPage() {
@@ -25,32 +26,40 @@ export function LoginPage() {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            email: "",
+            username: "",
             password: "",
         },
     })
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         try {
-            const response = await authService.login(values.email, values.password);
+            const response = await authService.login(values.username, values.password);
 
-            if (response.access_token) {
-                await login(response.access_token);
-                // Fetch user directly here to decide redirect immediately
-                const userProfile = await authService.getMe();
-                const role = userProfile.data.role;
+            if (response.token) {
+                await login(response.token);
 
-                toast.success("¡Bienvenido de vuelta!", {
-                    duration: 3000,
-                });
+                // Decode token to check role (or just use context if updated)
+                // For simplicity, we can rely on what login() did, but login() is async.
 
-                setTimeout(() => {
-                    if (role === 'admin') {
-                        navigate("/admin/dashboard");
-                    } else {
-                        navigate("/dashboard");
-                    }
-                }, 800);
+                // Check role from token directly for faster redirect
+                try {
+                    const decoded: any = jwtDecode(response.token);
+                    const role = decoded.role;
+
+                    toast.success("¡Bienvenido de vuelta!", {
+                        duration: 3000,
+                    });
+
+                    setTimeout(() => {
+                        if (role === 'admin') {
+                            navigate("/admin/dashboard");
+                        } else {
+                            navigate("/dashboard");
+                        }
+                    }, 800);
+                } catch (e) {
+                    navigate("/dashboard");
+                }
             }
         } catch (error: any) {
             console.error("Login failed:", error);
@@ -73,7 +82,7 @@ export function LoginPage() {
                     <div>
                         <b>Error de Credenciales</b>
                         <br />
-                        <span className="text-sm">Verifica tu email y contraseña.</span>
+                        <span className="text-sm">Verifica tu usuario y contraseña.</span>
                     </div>,
                     { id: "login-error" }
                 );
@@ -102,12 +111,12 @@ export function LoginPage() {
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                                 <ControllerFormField
                                     form={form}
-                                    name="email"
-                                    label="Correo Electrónico"
+                                    name="username"
+                                    label="Usuario"
                                 >
                                     {(field) => (
                                         <Input
-                                            placeholder="usuario@ejemplo.com"
+                                            placeholder="admin"
                                             {...field}
                                             className="bg-background/50 border-border/50 focus:bg-background transition-colors"
                                         />

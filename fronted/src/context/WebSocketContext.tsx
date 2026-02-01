@@ -1,5 +1,15 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import useWebSocket, { ReadyState } from 'react-use-websocket';
+import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from 'react';
+
+// Define ReadyState constant manually since we removed the lib
+export const ReadyState = {
+    CONNECTING: 0,
+    OPEN: 1,
+    CLOSING: 2,
+    CLOSED: 3,
+    UNINSTANTIATED: -1,
+} as const;
+
+export type ReadyState = typeof ReadyState[keyof typeof ReadyState];
 
 interface SensorReading {
     sensor_id: string;
@@ -27,38 +37,83 @@ interface WebSocketContextType {
 const WebSocketContext = createContext<WebSocketContextType>({} as WebSocketContextType);
 
 // Construct WS URL - In production this should be dynamic
-const WS_URL = 'ws://localhost:8000/ws';
+// Construct WS URL - In production this should be dynamic
+const WS_URL = 'ws://localhost:5000/ws';
 
 export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
-    const { sendMessage, lastJsonMessage, readyState } = useWebSocket(WS_URL, {
-        shouldReconnect: (closeEvent) => true,
-        reconnectAttempts: 10,
-        reconnectInterval: 3000,
-    });
-
+    const [readyState, setReadyState] = useState<ReadyState>(ReadyState.CLOSED);
+    const [lastJsonMessage, setLastJsonMessage] = useState<any>(null);
     const [sensorReadings, setSensorReadings] = useState<Record<string, SensorReading>>({});
     const [irrigationZones, setIrrigationZones] = useState<Record<number, IrrigationZone>>({});
+    const socketRef = useRef<WebSocket | null>(null);
+
+    const connect = () => {
+        const token = localStorage.getItem('token');
+        const url = token ? `${WS_URL}?token=${token}` : null;
+
+        if (!url) return;
+
+        try {
+            const ws = new WebSocket(url);
+            socketRef.current = ws;
+
+            ws.onopen = () => {
+                console.log('WS Connected');
+                setReadyState(ReadyState.OPEN);
+            };
+
+            ws.onclose = () => {
+                console.log('WS Disconnected');
+                setReadyState(ReadyState.CLOSED);
+                setTimeout(connect, 3000); // Reconnect after 3s
+            };
+
+            ws.onerror = (error) => {
+                console.error('WS Error:', error);
+                setReadyState(ReadyState.CLOSED);
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    setLastJsonMessage(data);
+
+                    if (data.type === 'new_reading') {
+                        const reading = data.data as SensorReading;
+                        setSensorReadings(prev => ({
+                            ...prev,
+                            [reading.sensor_id]: reading
+                        }));
+                    } else if (data.type === 'zone_update') {
+                        const zone = data.data as IrrigationZone;
+                        setIrrigationZones(prev => ({
+                            ...prev,
+                            [zone.id]: zone
+                        }));
+                    }
+                } catch (e) {
+                    console.error("WS Parse Error", e);
+                }
+            };
+        } catch (e) {
+            console.error("WS Connection Error", e);
+        }
+    };
 
     useEffect(() => {
-        if (lastJsonMessage) {
-            console.log("WS Message:", lastJsonMessage);
-            const msg = lastJsonMessage as any;
-
-            if (msg.type === 'new_reading') {
-                const reading = msg.data as SensorReading;
-                setSensorReadings(prev => ({
-                    ...prev,
-                    [reading.sensor_id]: reading
-                }));
-            } else if (msg.type === 'zone_update') {
-                const zone = msg.data as IrrigationZone;
-                setIrrigationZones(prev => ({
-                    ...prev,
-                    [zone.id]: zone
-                }));
+        connect();
+        return () => {
+            if (socketRef.current) {
+                socketRef.current.close();
             }
+        };
+    }, []);
+
+    const sendMessage = (message: string) => {
+        if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+            socketRef.current.send(message);
         }
-    }, [lastJsonMessage]);
+    };
 
     return (
         <WebSocketContext.Provider value={{

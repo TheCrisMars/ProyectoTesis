@@ -101,46 +101,38 @@ export function IrrigationPanel() {
                 )}
             </CardHeader>
             <CardContent className="p-4 pt-0">
-                {loading && !primaryZone ? (
+                {loading ? (
                     <div className="h-20 flex items-center justify-center text-xs text-muted-foreground animate-pulse">Cargando...</div>
-                ) : primaryZone ? (
-                    <div className="flex items-center justify-between mt-2">
-                        {/* Info Side */}
-                        <div className="flex flex-col">
-                            <div className="text-2xl font-bold truncate max-w-[140px]">
-                                {primaryZone.name || "Zona 1"}
-                            </div>
-                            <div className="text-[10px] font-bold uppercase tracking-wider mt-1">
-                                {primaryZone.is_pump_active ? (
-                                    <span className="text-blue-600 flex items-center gap-1 animate-pulse">
-                                        <span className="h-2 w-2 rounded-full bg-blue-500" />
-                                        ACTIVO
-                                    </span>
-                                ) : (
-                                    <span className="text-slate-400 flex items-center gap-1">
-                                        <span className="h-2 w-2 rounded-full bg-slate-300" />
-                                        INACTIVO
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Action Side - Compact Big Button */}
-                        <Button
-                            className={`
-                                relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-md group
-                                ${primaryZone.is_pump_active
-                                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/40 ring-4 ring-blue-50 dark:ring-blue-900/20'
-                                    : 'bg-white border-2 border-slate-200 text-slate-400 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-600'
-                                }
-                            `}
-                            onClick={() => handleToggle(primaryZone)}
-                        >
-                            <Power className={`h-6 w-6 ${primaryZone.is_pump_active ? 'scale-110' : 'scale-100 group-hover:scale-110'} transition-transform`} />
-                        </Button>
-                    </div>
                 ) : (
-                    <div className="h-20 flex items-center justify-center text-xs text-muted-foreground">Sin configuración.</div>
+                    <div className="grid grid-cols-2 gap-2">
+                        {zones.map((zone) => (
+                            <div key={zone.id} className="felx flex-col p-2 border rounded-lg">
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className="text-xs font-bold">{zone.name || `Zona ${zone.id}`}</span>
+                                    {zone.id === 4 ? (
+                                        <span className="text-[10px] text-purple-500 font-bold">AUTO</span>
+                                    ) : null}
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <div className="text-[10px] uppercase font-bold">
+                                        {zone.is_pump_active ? (
+                                            <span className="text-blue-600">ACTIVO</span>
+                                        ) : (
+                                            <span className="text-slate-400">INACTIVO</span>
+                                        )}
+                                    </div>
+                                    <Button
+                                        size="icon"
+                                        className={`h-8 w-8 rounded-full ${zone.is_pump_active ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+                                        onClick={() => handleToggle(zone)}
+                                        disabled={zone.id === 4} // Disable manual toggle for Auto zone? Or allow override? User said "4 es automatico", usually implies auto-only, but let's allow override or check user intent. User said "se enciende automaticamente".
+                                    >
+                                        <Power className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 )}
             </CardContent>
         </Card>

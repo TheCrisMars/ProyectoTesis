@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { authService } from '../services/api';
+import { jwtDecode } from "jwt-decode";
 
 interface User {
     id: number;
@@ -28,15 +29,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Function to load user profile
     const loadUser = async () => {
         try {
-            if (authService.isAuthenticated()) {
-                const response = await authService.getMe();
-                setUser(response.data);
+            const token = localStorage.getItem('token');
+            if (token) {
+                // Decode token manually since backend doesn't have /me endpoint
+                try {
+                    const decoded: any = jwtDecode(token);
+                    // Map decoded token to User interface
+                    // Backend sends: { user: "username", role: "...", exp: ... }
+                    setUser({
+                        id: 0, // ID not available in token, use 0 or modify backend to include it
+                        email: decoded.user || "", // Mapping username to email field for compat
+                        full_name: decoded.user || "Usuario",
+                        profile_image_url: null,
+                        role: decoded.role || "user",
+                        is_active: true
+                    });
+                } catch (e) {
+                    console.error("Invalid token:", e);
+                    authService.logout();
+                    setUser(null);
+                }
             } else {
-                setUser(null); // Ensure user is null if not authenticated
+                setUser(null);
             }
         } catch (error) {
             console.error("Failed to load user", error);
-            authService.logout(); // If token is invalid, logout
+            authService.logout();
             setUser(null);
         } finally {
             setIsLoading(false);
@@ -49,30 +67,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const login = async (token: string) => {
         localStorage.setItem('token', token);
-        setIsLoading(true); // Set loading true while fetching user after login
+        setIsLoading(true);
         await loadUser();
     };
 
     const logout = () => {
         authService.logout();
         setUser(null);
-        setIsLoading(false); // Not loading after logout
+        setIsLoading(false);
     };
 
     const refreshUser = async () => {
-        try {
-            if (authService.isAuthenticated()) {
-                const response = await authService.getMe();
-                setUser(response.data);
-            } else {
-                setUser(null);
-            }
-        } catch (error) {
-            console.error("Failed to refresh user", error);
-            // Optionally, if refresh fails due to invalid token, force logout
-            authService.logout();
-            setUser(null);
-        }
+        await loadUser();
     };
 
     return (

@@ -139,3 +139,9 @@ class AdminStats(BaseModel):
     active_users_24h: int
     system_uptime: str
     inactive_users_7d: int
+
+# --- Pulse/Legacy Schema ---
+class PulseControl(BaseModel):
+    accion: str # 'on' or 'off'
+    pulse: int
+

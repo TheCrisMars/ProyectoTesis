@@ -9,22 +9,25 @@ import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { ProfilePage } from './pages/dashboard/ProfilePage';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
+import { WebSocketProvider } from './context/WebSocketContext';
 
 function App() {
   return (
     <>
       <ScrollToTop />
-      <Routes>
-        <Route element={<Layout />}>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/admin/users" element={<AdminUsersPage />} />
-          <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-        </Route>
-      </Routes>
+      <WebSocketProvider>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/admin/users" element={<AdminUsersPage />} />
+            <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+          </Route>
+        </Routes>
+      </WebSocketProvider>
     </>
   );
 }

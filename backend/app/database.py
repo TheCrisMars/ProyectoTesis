@@ -8,14 +8,19 @@ load_dotenv()
 
 # Format: postgresql://user:password@postgresserver/db
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
+
 if not SQLALCHEMY_DATABASE_URL:
-    # Fallback only for dev if .env is missing, or raise error
     print("WARNING: DATABASE_URL not found in .env, using default local")
     SQLALCHEMY_DATABASE_URL = "postgresql://postgres:password@localhost/tesis_iot"
+else:
+     print(f"🔌 LOADING DB URL: {SQLALCHEMY_DATABASE_URL.split('@')[1] if '@' in SQLALCHEMY_DATABASE_URL else 'HIDDEN'}")
 
+# Ensure clean connection args
+connect_args = {"options": "-c search_path=dev"}
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL
+    SQLALCHEMY_DATABASE_URL,
+    connect_args=connect_args
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

@@ -1,27 +1,27 @@
 "use client"
 
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Progress } from "@/components/ui/progress"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useAuth } from "@/context/AuthContext"
+import { useWebSocketContext } from "@/context/WebSocketContext"
+import { ReadyState } from "@/context/readyState"
 import {
     Activity,
     Droplets,
-    Wifi,
     TrendingDown,
+    Wifi,
     Zap,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { DashboardChart } from "./components/DashboardChart"
 import { IrrigationPanel } from "./components/IrrigationPanel"
 import { RealTimeSensorChart } from "./components/RealTimeSensorChart"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useState, useEffect } from "react"
-import { useAuth } from "@/context/AuthContext"
-import { useNavigate } from "react-router-dom"
-import { useWebSocketContext } from "@/context/WebSocketContext"
-import { ReadyState } from "react-use-websocket"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { WeatherCard, WeatherHistory, WeatherPicker, type WeatherData, type HistoryItem, getWeatherCondition } from "./components/WeatherComponents"
+import { getWeatherCondition, WeatherCard, WeatherHistory, WeatherPicker, type HistoryItem, type WeatherData } from "./components/WeatherComponents"
 
 const humiditySparkline = [60, 62, 58, 57, 55, 53, 56, 59]
 const latencySparkline = [45, 52, 48, 50, 47, 49, 51, 48]
@@ -114,10 +114,23 @@ export function DashboardPage() {
             temp: r.temperature,
             hum: r.humidity,
             signal: 90,
-            status: "online"
+            status: "online",
+            adc: r.adc,
+            finca: r.finca,
+            transformed: r.humidity // Assuming 'transformed' refers to the final readable value (humidity %)
         }))
         : [
-            { id: "Wait...", name: "Esperando datos...", temp: 0, hum: 0, signal: 0, status: "offline" }
+            {
+                id: "Wait...",
+                name: "Esperando datos...",
+                temp: 0,
+                hum: 0,
+                signal: 0,
+                status: "offline",
+                adc: 0,
+                finca: "N/A",
+                transformed: 0
+            }
         ];
 
     return (
@@ -129,7 +142,7 @@ export function DashboardPage() {
                     </h1>
                     <p className="text-muted-foreground mt-1">Monitoreo en tiempo real de los sistemas ESP32</p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
                     <Badge variant={isConnected ? "default" : "destructive"}>
                         WS: {connectionStatus}
                     </Badge>
@@ -310,7 +323,7 @@ export function DashboardPage() {
                                             <div className="space-y-3">
                                                 <div className="flex justify-between items-center bg-accent/10 p-2 rounded">
                                                     <span className="text-xs font-medium text-muted-foreground">Temperatura</span>
-                                                    <span className="text-lg font-bold text-red-500">{sensor.temp}°C</span>
+                                                    <span className="text-lg font-bold text-red-500">{sensor.temp}°C <span className="text-sm text-muted-foreground">({sensor.temp}%)</span></span>
                                                 </div>
                                                 <div className="flex justify-between items-center bg-accent/10 p-2 rounded">
                                                     <span className="text-xs font-medium text-muted-foreground">Humedad</span>
@@ -319,6 +332,14 @@ export function DashboardPage() {
                                                 <div className="flex justify-between items-center bg-accent/10 p-2 rounded">
                                                     <span className="text-xs font-medium text-muted-foreground">Señal</span>
                                                     <span className="text-lg font-bold text-green-500">{sensor.signal}%</span>
+                                                </div>
+
+                                                {/* TECHNICAL PANEL (CA5) */}
+                                                <div className="mt-2 pt-2 border-t border-border/50 text-[10px] space-y-1 text-muted-foreground">
+                                                    <div className="flex min-w-0 justify-between gap-2"><span className="shrink-0">Finca:</span> <span className="font-mono min-w-0 truncate text-right">{sensor.finca || "Desconocida"}</span></div>
+                                                    <div className="flex min-w-0 justify-between gap-2"><span className="shrink-0">ID Sensor:</span> <span className="font-mono min-w-0 truncate text-right">{sensor.id}</span></div>
+                                                    <div className="flex min-w-0 justify-between gap-2"><span className="shrink-0">ADC (Raw):</span> <span className="font-mono min-w-0 truncate text-right">{sensor.adc || "N/A"}</span></div>
+                                                    <div className="flex min-w-0 justify-between gap-2"><span className="shrink-0">Transformado:</span> <span className="font-mono min-w-0 truncate text-right">{sensor.transformed}%</span></div>
                                                 </div>
                                             </div>
                                         ) : (

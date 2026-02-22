@@ -1,18 +1,18 @@
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
+import { ControllerFormField } from "@/components/ControllerFormField"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import {
     Form,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { ControllerFormField } from "@/components/ControllerFormField"
-import { Link, useNavigate } from "react-router-dom"
-import { authService } from "@/services/api"
-import { toast } from "react-hot-toast"
 import { useAuth } from "@/context/AuthContext"
-import { jwtDecode } from "jwt-decode";
+import { authService } from "@/services/api"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { jwtDecode } from "jwt-decode"
+import { useForm } from "react-hook-form"
+import { toast } from "react-hot-toast"
+import { Link, useNavigate } from "react-router-dom"
+import { z } from "zod"
 
 const formSchema = z.object({
     username: z.string().min(3, { message: "El usuario debe tener al menos 3 caracteres" }),
@@ -38,10 +38,6 @@ export function LoginPage() {
             if (response.token) {
                 await login(response.token);
 
-                // Decode token to check role (or just use context if updated)
-                // For simplicity, we can rely on what login() did, but login() is async.
-
-                // Check role from token directly for faster redirect
                 try {
                     const decoded: any = jwtDecode(response.token);
                     const role = decoded.role;
@@ -63,6 +59,18 @@ export function LoginPage() {
             }
         } catch (error: any) {
             console.error("Login failed:", error);
+            if (!error?.response) {
+                toast.error(
+                    <div>
+                        <b>Servidor no disponible</b>
+                        <br />
+                        <span className="text-sm">No se pudo conectar con el backend. Verifica la URL del API en producción.</span>
+                    </div>,
+                    { id: "login-server-error" }
+                );
+                return;
+            }
+
             const errorMessage = error.response?.data?.detail;
 
             if (errorMessage === "User account is inactive") {
@@ -74,7 +82,7 @@ export function LoginPage() {
                     </div>,
                     {
                         duration: 5000,
-                        id: "inactive-account-error" // Prevents stacking
+                        id: "inactive-account-error"
                     }
                 );
             } else {
@@ -100,7 +108,12 @@ export function LoginPage() {
 
             <div className="relative z-10 w-full max-w-md px-4">
                 <Card className="border-border/50 bg-background/60 backdrop-blur-xl shadow-2xl">
-                    <CardHeader className="space-y-1">
+                    <CardHeader className="space-y-1 flex flex-col items-center">
+                        <img
+                            src="/Logo.svg"
+                            alt="Cacao IoT Logo"
+                            className="h-16 w-auto mb-2"
+                        />
                         <CardTitle className="text-2xl font-bold text-center">Bienvenido de nuevo</CardTitle>
                         <CardDescription className="text-center">
                             Ingresa tus credenciales para acceder al panel de control

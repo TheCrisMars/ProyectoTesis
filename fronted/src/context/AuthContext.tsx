@@ -31,14 +31,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             const token = localStorage.getItem('token');
             if (token) {
-                // Decode token manually since backend doesn't have /me endpoint
                 try {
                     const decoded: any = jwtDecode(token);
-                    // Map decoded token to User interface
-                    // Backend sends: { user: "username", role: "...", exp: ... }
+
+                    // Check for expiration
+                    const currentTime = Date.now() / 1000;
+                    if (decoded.exp && decoded.exp < currentTime) {
+                        console.warn("Token expired");
+                        authService.logout();
+                        setUser(null);
+                        return;
+                    }
                     setUser({
-                        id: 0, // ID not available in token, use 0 or modify backend to include it
-                        email: decoded.user || "", // Mapping username to email field for compat
+                        id: 0,
+                        email: decoded.user || "",
                         full_name: decoded.user || "Usuario",
                         profile_image_url: null,
                         role: decoded.role || "user",

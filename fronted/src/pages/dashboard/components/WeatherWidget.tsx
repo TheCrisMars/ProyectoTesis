@@ -3,7 +3,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, CloudSun, Loader2, History, Droplets, Wind, AlertCircle } from "lucide-react"
+import { Search, CloudSun, Loader2, History, Droplets, Wind, AlertCircle, Sun, Cloud, CloudRain, CloudLightning, Snowflake } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -102,6 +102,16 @@ export function WeatherWidget() {
         return "Condiciones normales. Operación estándar."
     }
 
+    const getWeatherIcon = (code: number, className?: string) => {
+        if (code === 0) return <Sun className={className} />
+        if (code <= 3) return <CloudSun className={className} />
+        if (code <= 48) return <Cloud className={className} />
+        if (code <= 67) return <CloudRain className={className} />
+        if (code <= 77) return <Snowflake className={className} />
+        if (code >= 80) return <CloudLightning className={className} />
+        return <CloudSun className={className} />
+    }
+
     const fetchWeather = async () => {
         setLoading(true)
         setError("")
@@ -144,7 +154,7 @@ export function WeatherWidget() {
         <Card className="h-full flex flex-col">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                    <CloudSun className="h-5 w-5 text-sky-500" />
+                    {weather ? getWeatherIcon(weather.weathercode, "h-5 w-5 text-sky-500") : <CloudSun className="h-5 w-5 text-sky-500" />}
                     Clima & Predicciones
                 </CardTitle>
                 <CardDescription>Selecciona ubicación en el mapa para predicciones</CardDescription>
@@ -194,8 +204,8 @@ export function WeatherWidget() {
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <p className="text-sm font-medium text-muted-foreground">{getWeatherCondition(weather.weathercode)}</p>
-                                            <div className="text-4xl font-bold text-sky-700 dark:text-sky-300 my-1">
-                                                {weather.temperature}°C
+                                            <div className="text-4xl font-bold text-sky-700 dark:text-sky-300 my-1 flex items-baseline gap-2">
+                                                {weather.temperature}°C <span className="text-2xl text-sky-600/70 dark:text-sky-400/70">({weather.temperature}%)</span>
                                             </div>
                                         </div>
                                         <Badge variant="outline" className="bg-background/50">
@@ -239,7 +249,7 @@ export function WeatherWidget() {
                             {history.map((item) => (
                                 <div key={item.id} className="text-xs flex justify-between items-center p-2 rounded bg-muted/50">
                                     <div className="flex flex-col">
-                                        <span className="font-medium">{item.temp}°C - {item.condition}</span>
+                                        <span className="font-medium">{item.temp}°C ({item.temp}%) - {item.condition}</span>
                                         <span className="text-[10px] text-muted-foreground">{item.date}</span>
                                     </div>
                                     <span className="text-[10px] text-muted-foreground truncate max-w-[80px]">

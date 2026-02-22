@@ -1,18 +1,18 @@
 
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Badge } from "@/components/ui/badge"
-import { CloudSun, Loader2, History, Droplets, Wind, Search, TrendingUp } from "lucide-react"
+import { Cloud, CloudLightning, CloudRain, CloudSun, Droplets, History, Loader2, Search, Snowflake, Sun, TrendingUp, Wind } from "lucide-react"
 
 // Leaflet Imports
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet"
-import "leaflet/dist/leaflet.css"
 import L from "leaflet"
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import icon from 'leaflet/dist/images/marker-icon.png'
+import iconShadow from 'leaflet/dist/images/marker-shadow.png'
+import "leaflet/dist/leaflet.css"
+import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet"
 
 let DefaultIcon = L.icon({
     iconUrl: icon,
@@ -57,6 +57,16 @@ export const getAdvice = (code: number, temp: number) => {
     if (temp > 30) return "Alta temperatura. Se recomienda riego extra."
     if (temp < 10) return "Baja temperatura. Protege cultivos sensibles."
     return "Condiciones normales. Operación estándar."
+}
+
+export const getWeatherIcon = (code: number, className?: string) => {
+    if (code === 0) return <Sun className={className} />
+    if (code <= 3) return <CloudSun className={className} />
+    if (code <= 48) return <Cloud className={className} />
+    if (code <= 67) return <CloudRain className={className} />
+    if (code <= 77) return <Snowflake className={className} />
+    if (code >= 80) return <CloudLightning className={className} />
+    return <CloudSun className={className} />
 }
 
 // Map Component
@@ -104,15 +114,15 @@ export function WeatherCard({
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Temperatura</CardTitle>
                 <div className="p-2 bg-sky-500/10 rounded-lg">
-                    <CloudSun className="h-4 w-4 text-sky-500" />
+                    {weather ? getWeatherIcon(weather.weathercode, "h-4 w-4 text-sky-500") : <CloudSun className="h-4 w-4 text-sky-500" />}
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="text-3xl font-bold">
-                    {weather.temperature}°C
+                <div className="text-3xl font-bold flex items-baseline gap-2">
+                    {weather.temperature}°C <span className="text-lg font-medium text-muted-foreground">({weather.temperature}%)</span>
                 </div>
                 <div className="flex items-center gap-2 mt-1">
-                    <TrendingUp className="h-3 w-3 text-sky-500" />
+                    {weather ? getWeatherIcon(weather.weathercode, "h-4 w-4 text-sky-500") : <TrendingUp className="h-4 w-4 text-sky-500" />}
                     <p className="text-xs text-muted-foreground">{getWeatherCondition(weather.weathercode)}</p>
                 </div>
 
@@ -159,8 +169,8 @@ export function WeatherPicker({
                     <Marker position={[parseFloat(lat) || 0, parseFloat(lon) || 0]}></Marker>
                 </MapContainer>
 
-                <div className="absolute bottom-2 left-2 right-2 bg-background/90 p-2 rounded border text-xs z-[1000] flex justify-between items-center">
-                    <span>Lat: {lat}, Lon: {lon}</span>
+                <div className="absolute bottom-2 left-2 right-2 bg-background/90 p-2 rounded border text-xs z-[1000] flex min-w-0 justify-between items-center gap-2">
+                    <span className="min-w-0 truncate">Lat: {lat}, Lon: {lon}</span>
                     <Button size="sm" onClick={fetchWeather} disabled={loading}>
                         {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Actualizar"}
                     </Button>
@@ -170,7 +180,7 @@ export function WeatherPicker({
             {weather && (
                 <div className="bg-muted/50 p-3 rounded-lg border flex gap-4 items-center">
                     <div>
-                        <div className="text-2xl font-bold">{weather.temperature}°C</div>
+                        <div className="text-2xl font-bold">{weather.temperature}°C <span className="text-sm font-normal text-muted-foreground">({weather.temperature}%)</span></div>
                         <div className="text-xs text-muted-foreground">{getWeatherCondition(weather.weathercode)}</div>
                     </div>
                     <div className="h-8 w-px bg-border" />
@@ -190,7 +200,7 @@ export function WeatherHistory({ history }: { history: HistoryItem[] }) {
     const hasMore = history.length > 5;
 
     return (
-        <Card>
+        <Card className="min-w-0 overflow-x-hidden">
             <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                     <History className="h-4 w-4" />
@@ -198,21 +208,21 @@ export function WeatherHistory({ history }: { history: HistoryItem[] }) {
                 </CardTitle>
                 <CardDescription>Últimas ubicaciones verificadas</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="min-w-0 overflow-x-hidden">
                 <div className="space-y-3">
                     {history.length === 0 && <p className="text-xs text-muted-foreground">No hay historial disponible.</p>}
                     {displayedHistory.map((item) => (
                         <div key={item.id} className="flex flex-col gap-1 p-2 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                            <div className="flex justify-between items-center">
-                                <span className="font-bold text-sm">{item.temp}°C</span>
-                                <Badge variant="outline" className="text-[10px] h-5">{item.condition}</Badge>
+                            <div className="flex min-w-0 justify-between items-center gap-2">
+                                <span className="font-bold text-sm min-w-0 truncate">{item.temp}°C ({item.temp}%)</span>
+                                <Badge variant="outline" className="text-[10px] h-5 max-w-[45%] truncate">{item.condition}</Badge>
                             </div>
-                            <div className="flex justify-between items-end mt-1">
-                                <div className="text-[10px] text-muted-foreground">
+                            <div className="flex min-w-0 justify-between items-end mt-1 gap-2">
+                                <div className="text-[10px] text-muted-foreground min-w-0">
                                     <div>Lat: {item.lat}</div>
                                     <div>Lon: {item.lon}</div>
                                 </div>
-                                <div className="text-[10px] text-muted-foreground">{item.date.split(" ")[1]}</div>
+                                <div className="text-[10px] text-muted-foreground shrink-0">{item.date.split(" ")[1]}</div>
                             </div>
                         </div>
                     ))}
@@ -234,8 +244,8 @@ export function WeatherHistory({ history }: { history: HistoryItem[] }) {
                                     {history.map((item) => (
                                         <div key={item.id} className="flex flex-col gap-1 p-2 rounded-lg border bg-card">
                                             <div className="flex justify-between items-center">
-                                                <span className="font-bold text-sm">{item.temp}°C</span>
-                                                <Badge variant="outline" className="text-[10px] h-5">{item.condition}</Badge>
+                                                <span className="font-bold text-sm">{item.temp}°C ({item.temp}%)</span>
+                                                <Badge variant="outline" className="text-[10px] h-5 max-w-[45%] truncate shrink-0">{item.condition}</Badge>
                                             </div>
                                             <div className="flex justify-between items-end mt-1">
                                                 <div className="text-[10px] text-muted-foreground">

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // --- Configuration ---
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const API_URL = ((import.meta.env.VITE_API_URL as string | undefined) ?? "http://localhost:5000").replace(/\/$/, "");
 
 const api = axios.create({
     baseURL: API_URL,
@@ -21,27 +21,21 @@ api.interceptors.request.use((config) => {
 
 // --- Auth Services ---
 export const authService = {
-    async login(email: string, password: string) {
+    async login(username: string, password: string) {
         // OAuth2PasswordRequestForm expects form-data, not JSON
-        const formData = new FormData();
-        formData.append('username', email); // FASTAPI expects 'username' field
-        formData.append('password', password);
+        const response = await api.post('/login', { username: username, password: password });
 
-        const response = await api.post('/token', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
-
-        if (response.data.access_token) {
-            localStorage.setItem('token', response.data.access_token);
+        if (response.data.token) {
+            localStorage.setItem('token', response.data.token);
         }
         return response.data;
     },
 
     async register(data: any) {
         return api.post('/users/', {
-            email: data.email,
+            username: data.username,
             password: data.password,
-            full_name: data.fullName
+            // full_name: data.fullName // Backend likely doesn't support this yet in users table
         });
     },
 
@@ -84,7 +78,7 @@ export interface IrrigationZone {
     id: number;
     name: string;
     is_pump_active: boolean;
-    mode: 'manual' | 'timer';
+    mode: 'manual' | 'timer' | 'auto';
     last_watered: string | null;
     timer_seconds_remaining: number;
 }
@@ -110,6 +104,35 @@ export const irrigationService = {
             params: { seconds }
         });
         return response.data;
+    },
+
+    async controlPulse(data: { accion: string, pulse: number }) {
+        const response = await api.post('/api/pulse', data);
+        return response.data;
+    },
+
+    async controlCacao(comando: { accion: 'on' | 'off' | 'auto' }) {
+        try {
+            let pulse = 0;
+            switch (comando.accion) {
+                case 'on': pulse = 1; break;
+                case 'off': pulse = 2; break;
+                case 'auto': pulse = 3; break;
+            }
+
+            // Always send 'on' to trigger the pulse
+            const pulseCmd = {
+                accion: 'on',
+                pulse: pulse
+            };
+
+            await this.controlPulse(pulseCmd);
+            return {
+                mensaje: `Comando ${comando.accion} (Pulse ${pulse}) enviado correctamente, sistema Cacao actualizado.`
+            };
+        } catch (error: any) {
+            throw new Error(error.response?.data?.error || error.message || 'Error al comunicarse con el servidor');
+        }
     }
 };
 
@@ -134,8 +157,7 @@ export interface UserMessage {
 export const adminService = {
     async getUsers() {
         // Updated path
-        const response = await api.get('/admin/users');
-        return response.data;
+        return (await api.get('/admin/users')).data;
     },
     async updateUser(id: number, data: any) {
         // Updated path

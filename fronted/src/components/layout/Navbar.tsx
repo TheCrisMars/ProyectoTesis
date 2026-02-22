@@ -1,20 +1,5 @@
 "use client"
 
-import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { Menu, LogOut, LayoutDashboard, User, Users } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader, SheetDescription } from "@/components/ui/sheet"
-import { useAuth } from "@/context/AuthContext"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -26,6 +11,21 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { useAuth } from "@/context/AuthContext"
+import { LayoutDashboard, LogOut, Menu, User, Users } from "lucide-react"
+import { useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
 
 export function Navbar() {
     const [isOpen, setIsOpen] = useState(false)
@@ -33,10 +33,19 @@ export function Navbar() {
     const { user, isAuthenticated, logout } = useAuth();
     const navigate = useNavigate();
 
-    const navLinks = [
+    const logoHref = isAuthenticated
+        ? (user?.role === "admin" ? "/admin/dashboard" : "/dashboard")
+        : "/";
+
+    const brandName = isAuthenticated ? "Cacao IoT" : "HMB Ingenierías";
+    const logoSrc = isAuthenticated ? "/Logo.svg" : "/Logo-HMB.jpeg";
+
+    const navLinks: Array<{ name: string; path: string }> = [
         { name: "Inicio", path: "/" },
-        { name: "Características", path: "#features" },
-        { name: "Nosotros", path: "#about" },
+        { name: "Servicios", path: "/#servicios" },
+        { name: "Cursos", path: "/cursos" },
+        { name: "Cacao IoT", path: "/#cacao-iot" },
+        { name: "Nosotros", path: "/nosotros" },
     ]
 
     const handleLogout = () => {
@@ -90,16 +99,16 @@ export function Navbar() {
                     )}
 
                     <Link
-                        to="/"
+                        to={logoHref}
                         className="flex items-center gap-3 font-bold text-xl hover:opacity-80 transition-all duration-300 hover:scale-105 group"
                     >
                         <img
-                            src="/LOGO-ULEAM.png"
-                            alt="ULEAM Logo"
-                            className="h-10 w-auto group-hover:rotate-6 transition-transform duration-300"
+                            src={logoSrc}
+                            alt={`${brandName} Logo`}
+                            className="h-10 w-10 object-contain group-hover:rotate-6 transition-transform duration-300"
                         />
                         <span className="text-primary text-2xl font-extrabold tracking-tight">
-                            ULEAM IoT
+                            {brandName}
                         </span>
                     </Link>
                 </div>
@@ -108,27 +117,15 @@ export function Navbar() {
                 {!isAuthenticated ? (
                     <div className="hidden md:flex gap-10 items-center">
                         {navLinks.map((link) => (
-                            <a
+                            <Link
                                 key={link.name}
-                                href={link.path}
+                                to={link.path}
                                 className="text-base font-semibold text-muted-foreground hover:text-foreground transition-all duration-300 relative group"
                             >
                                 {link.name}
                                 <span className="absolute -bottom-1 left-0 w-0 h-1 bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-300 group-hover:w-full" />
-                            </a>
+                            </Link>
                         ))}
-                        <div className="flex gap-4 ml-6">
-                            <Link to="/login">
-                                <Button variant="ghost" className="font-semibold hover:bg-primary/10 transition-all duration-300">
-                                    Iniciar Sesión
-                                </Button>
-                            </Link>
-                            <Link to="/register">
-                                <Button className="font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 bg-gradient-to-r from-primary to-primary/90 hover:from-primary hover:to-accent">
-                                    Registrarse
-                                </Button>
-                            </Link>
-                        </div>
                     </div>
                 ) : (
                     /* Logged In User Menu (Right side) */
@@ -215,24 +212,15 @@ export function Navbar() {
                                 <SheetTitle className="hidden">Menú de navegación</SheetTitle>
                                 <div className="flex flex-col gap-6 mt-8">
                                     {navLinks.map((link) => (
-                                        <a
+                                        <Link
                                             key={link.name}
-                                            href={link.path}
+                                            to={link.path}
                                             onClick={() => setIsOpen(false)}
                                             className="text-lg font-medium hover:text-primary transition-colors"
                                         >
                                             {link.name}
-                                        </a>
+                                        </Link>
                                     ))}
-                                    <hr className="my-2 border-border/50" />
-                                    <Link to="/login" onClick={() => setIsOpen(false)}>
-                                        <Button variant="outline" className="w-full font-medium bg-transparent">
-                                            Iniciar Sesión
-                                        </Button>
-                                    </Link>
-                                    <Link to="/register" onClick={() => setIsOpen(false)}>
-                                        <Button className="w-full font-medium">Registrarse</Button>
-                                    </Link>
                                 </div>
                             </SheetContent>
                         </Sheet>

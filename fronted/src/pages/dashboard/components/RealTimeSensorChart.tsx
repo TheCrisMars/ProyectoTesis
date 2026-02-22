@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts"
 import { Activity } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 interface SensorData {
     time: string
@@ -79,8 +79,8 @@ export function RealTimeSensorChart({ readings }: RealTimeSensorChartProps) {
                     Humedad en Tiempo Real (Último Minuto)
                 </CardTitle>
             </CardHeader>
-            <CardContent>
-                <div className="h-[300px] w-full">
+            <CardContent className="min-w-0 overflow-x-hidden">
+                <div className="h-[250px] w-full sm:h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={data}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />

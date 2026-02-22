@@ -1,17 +1,18 @@
 "use client"
 
-import { Bar, BarChart, Line, LineChart, Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
     type ChartConfig,
     ChartContainer,
-    ChartTooltip,
-    ChartTooltipContent,
     ChartLegend,
     ChartLegendContent,
+    ChartTooltip,
+    ChartTooltipContent,
 } from "@/components/ui/chart"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BarChart3, LineChartIcon, TrendingUp } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 
 const chartData = [
     { time: "00:00", temp: 22, hum: 60 },
@@ -44,8 +45,31 @@ interface DashboardChartProps {
 }
 
 export function DashboardChart({ timeRange = "24h" }: DashboardChartProps) {
+    const [isMobile, setIsMobile] = useState(false)
+
+    useEffect(() => {
+        if (typeof window === "undefined") return
+
+        const media = window.matchMedia("(max-width: 640px)")
+        const onChange = () => setIsMobile(media.matches)
+        onChange()
+
+        const mediaAny = media as any
+
+        if (typeof mediaAny.addEventListener === "function") {
+            mediaAny.addEventListener("change", onChange)
+            return () => mediaAny.removeEventListener?.("change", onChange)
+        }
+
+        // Legacy Safari fallback
+        // eslint-disable-next-line deprecation/deprecation
+        mediaAny.addListener?.(onChange)
+        // eslint-disable-next-line deprecation/deprecation
+        return () => mediaAny.removeListener?.(onChange)
+    }, [])
+
     return (
-        <Card>
+        <Card className="min-w-0 overflow-x-hidden">
             <CardHeader>
                 <CardTitle>Métricas del Sistema en Tiempo Real</CardTitle>
                 <CardDescription>
@@ -53,9 +77,9 @@ export function DashboardChart({ timeRange = "24h" }: DashboardChartProps) {
                     {timeRange === "1h" ? "hora" : timeRange === "24h" ? "24 horas" : timeRange === "7d" ? "7 días" : "30 días"}
                 </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="min-w-0 overflow-x-hidden">
                 <Tabs defaultValue="line" className="w-full">
-                    <TabsList className="grid w-full max-w-md grid-cols-3 mb-4">
+                    <TabsList className="grid w-full max-w-full grid-cols-3 mb-4">
                         <TabsTrigger value="line" className="flex items-center gap-2">
                             <LineChartIcon className="h-4 w-4" />
                             Línea
@@ -71,12 +95,44 @@ export function DashboardChart({ timeRange = "24h" }: DashboardChartProps) {
                     </TabsList>
 
                     <TabsContent value="line" className="mt-0">
-                        <ChartContainer config={chartConfig} className="h-[350px] w-full">
-                            <LineChart accessibilityLayer data={chartData}>
+                        <ChartContainer config={chartConfig} className="h-[260px] w-full sm:h-[350px]">
+                            <LineChart
+                                accessibilityLayer
+                                data={chartData}
+                                margin={{
+                                    top: 10,
+                                    right: isMobile ? 6 : 12,
+                                    left: isMobile ? 0 : 12,
+                                    bottom: 0,
+                                }}
+                            >
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="time" tickLine={false} tickMargin={10} axisLine={false} />
+                                <XAxis
+                                    dataKey="time"
+                                    tickLine={false}
+                                    tickMargin={8}
+                                    axisLine={false}
+                                    fontSize={10}
+                                    interval={isMobile ? 2 : 0}
+                                    minTickGap={isMobile ? 12 : 24}
+                                />
                                 <YAxis axisLine={false} tickLine={false} tickFormatter={(value) => `${value}`} />
                                 <ChartTooltip content={<ChartTooltipContent />} />
+                                <ChartTooltip
+                                    content={
+                                        <ChartTooltipContent
+                                            formatter={(value, name) => {
+                                                if (name === "temp") {
+                                                    return [`${value}°C`, chartConfig.temp.label];
+                                                }
+                                                if (name === "hum") {
+                                                    return [`${value}%`, chartConfig.hum.label];
+                                                }
+                                                return [value, name];
+                                            }}
+                                        />
+                                    }
+                                />
                                 <ChartLegend content={<ChartLegendContent />} />
                                 <Line
                                     type="monotone"
@@ -99,10 +155,27 @@ export function DashboardChart({ timeRange = "24h" }: DashboardChartProps) {
                     </TabsContent>
 
                     <TabsContent value="bar" className="mt-0">
-                        <ChartContainer config={chartConfig} className="h-[350px] w-full">
-                            <BarChart accessibilityLayer data={chartData}>
+                        <ChartContainer config={chartConfig} className="h-[260px] w-full sm:h-[350px]">
+                            <BarChart
+                                accessibilityLayer
+                                data={chartData}
+                                margin={{
+                                    top: 10,
+                                    right: isMobile ? 6 : 12,
+                                    left: isMobile ? 0 : 12,
+                                    bottom: 0,
+                                }}
+                            >
                                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                                <XAxis dataKey="time" tickLine={false} tickMargin={10} axisLine={false} />
+                                <XAxis
+                                    dataKey="time"
+                                    tickLine={false}
+                                    tickMargin={8}
+                                    axisLine={false}
+                                    fontSize={10}
+                                    interval={isMobile ? 2 : 0}
+                                    minTickGap={isMobile ? 12 : 24}
+                                />
                                 <YAxis axisLine={false} tickLine={false} tickFormatter={(value) => `${value}`} />
                                 <ChartTooltip content={<ChartTooltipContent indicator="dashed" />} />
                                 <ChartLegend content={<ChartLegendContent />} />
@@ -113,10 +186,27 @@ export function DashboardChart({ timeRange = "24h" }: DashboardChartProps) {
                     </TabsContent>
 
                     <TabsContent value="area" className="mt-0">
-                        <ChartContainer config={chartConfig} className="h-[350px] w-full">
-                            <AreaChart accessibilityLayer data={chartData}>
+                        <ChartContainer config={chartConfig} className="h-[260px] w-full sm:h-[350px]">
+                            <AreaChart
+                                accessibilityLayer
+                                data={chartData}
+                                margin={{
+                                    top: 10,
+                                    right: isMobile ? 6 : 12,
+                                    left: isMobile ? 0 : 12,
+                                    bottom: 0,
+                                }}
+                            >
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="time" tickLine={false} tickMargin={10} axisLine={false} />
+                                <XAxis
+                                    dataKey="time"
+                                    tickLine={false}
+                                    tickMargin={8}
+                                    axisLine={false}
+                                    fontSize={10}
+                                    interval={isMobile ? 2 : 0}
+                                    minTickGap={isMobile ? 12 : 24}
+                                />
                                 <YAxis axisLine={false} tickLine={false} tickFormatter={(value) => `${value}`} />
                                 <ChartTooltip content={<ChartTooltipContent />} />
                                 <ChartLegend content={<ChartLegendContent />} />
